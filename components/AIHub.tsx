@@ -2,25 +2,32 @@
 import { useState, useEffect } from 'react';
 import { Search, SlidersHorizontal, Bot, Loader2 } from 'lucide-react';
 import AICard from './AICard';
+import InteractionManager from './InteractionManager';
 
 export default function AIHub() {
     const [models, setModels] = useState<any[]>([]);
     const [favorites, setFavorites] = useState<string[]>([]);
     const [activeTab, setActiveTab] = useState('All');
     const [loading, setLoading] = useState(false);
+    const [selectedModel, setSelectedModel] = useState<any | null>(null);
     const [toast, setToast] = useState<string | null>(null);
     
     const tabs = ['All', 'Favorites', 'General AI', 'Developer & Code', 'Research & Search', 'Roleplay & Niche'];
 
     const fetchModels = async () => {
         setLoading(true);
-        setToast('Fetching latest AI services...');
+        setToast('Syncing models...');
         try {
-            const res = await globalThis.fetch('/api/v1/models');
+            const res = await fetch('/api/v1/models/sync', { method: 'POST' });
             const data = await res.json();
-            setModels(data);
+            if (data.success) {
+                // Fetch updated list after sync
+                const listRes = await fetch('/api/v1/models');
+                const listData = await listRes.json();
+                setModels(listData);
+            }
         } catch (error) {
-            console.error('Failed to fetch models', error);
+            console.error('Failed to sync models', error);
         } finally {
             setLoading(false);
             setToast(null);
@@ -82,9 +89,17 @@ export default function AIHub() {
                 model={model} 
                 isFavorite={favorites.includes(model.id)}
                 onToggleFavorite={() => toggleFavorite(model.id)}
+                onSelect={() => setSelectedModel(model)}
               />
             ))}
           </div>
+
+          {selectedModel && (
+            <InteractionManager 
+                model={selectedModel} 
+                onClose={() => setSelectedModel(null)}
+            />
+          )}
 
           {toast && (
             <div className="fixed top-4 right-4 bg-blue-600 text-white px-4 py-2 rounded shadow-lg z-50">

@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { syncModels } from '@/lib/services/scraper';
+import { scrapeModels } from '@/lib/services/scraper';
 
 export async function POST(req: NextRequest) {
   try {
-    const count = await syncModels();
+    const count = await scrapeModels();
     return NextResponse.json({ success: true, count });
   } catch (error) {
     console.error('Sync failed', error);
