@@ -9,7 +9,31 @@ export const metadata: Metadata = {
 export default function RootLayout({children}: {children: React.ReactNode}) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                if (typeof window !== 'undefined') {
+                  ['fetch', 'Headers', 'Request', 'Response', 'FormData'].forEach(function(prop) {
+                    try {
+                      var current = window[prop];
+                      Object.defineProperty(window, prop, {
+                        get: function() { return current; },
+                        set: function(v) { current = v; },
+                        configurable: true,
+                        enumerable: true
+                      });
+                    } catch(e) {}
+                  });
+                }
+              })();
+            `,
+          }}
+        />
+      </head>
       <body suppressHydrationWarning>{children}</body>
     </html>
   );
 }
+
