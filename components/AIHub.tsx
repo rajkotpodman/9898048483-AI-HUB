@@ -16,7 +16,7 @@ export default function AIHub() {
         setLoading(true);
         setToast('Fetching latest AI services...');
         try {
-            const res = await fetch('/api/v1/models');
+            const res = await globalThis.fetch('/api/v1/models');
             const data = await res.json();
             setModels(data);
         } catch (error) {
