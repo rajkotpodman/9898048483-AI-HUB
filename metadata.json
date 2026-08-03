@@ -1,0 +1,6 @@
+{
+  "name": "9898048483 AI Hub",
+  "description": "An all-in-one hub for managing and accessing various AI services.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
