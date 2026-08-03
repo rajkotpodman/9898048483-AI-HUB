@@ -2,13 +2,13 @@ import re
 import spacy
 
 try:
-    # Try loading the small english model
-    nlp = spacy.load("en_core_web_sm")
+    # Try loading the transformer english model
+    nlp = spacy.load("en_core_web_trf")
 except OSError:
-    print("Downloading spacy model 'en_core_web_sm'...")
+    print("Downloading spacy model 'en_core_web_trf'...")
     import spacy.cli
-    spacy.cli.download("en_core_web_sm")
-    nlp = spacy.load("en_core_web_sm")
+    spacy.cli.download("en_core_web_trf")
+    nlp = spacy.load("en_core_web_trf")
 
 def sanitize_prompt(text: str) -> str:
     """

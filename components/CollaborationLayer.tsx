@@ -10,13 +10,43 @@ export default function CollaborationLayer({ roomId }: { roomId: string }) {
 
     useEffect(() => {
         myId.current = `user_${Math.floor(Math.random() * 10000)}`;
-        // In a real deployed environment, this connects to the Python FastAPI backend
-        // e.g. ws://api.yourdomain.com/ws/collab/${roomId}
-        // For the AI Studio preview, we will simulate the connection
         
+        // Connect to FastAPI backend
+        // We use window.location.host to route through the Next.js proxy rewrite
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}/ws/collab/${roomId}`;
+        
+        const ws = new WebSocket(wsUrl);
+        wsRef.current = ws;
+
+        ws.onopen = () => setStatus('connected');
+        ws.onclose = () => setStatus('disconnected');
+        
+        ws.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                if (data.type === 'cursor_move' && data.id !== myId.current) {
+                    setCursors(prev => ({
+                        ...prev,
+                        [data.id]: {
+                            x: data.x,
+                            y: data.y,
+                            name: data.name
+                        }
+                    }));
+                } else if (data.type === 'user_left') {
+                    setCursors(prev => {
+                        const newCursors = { ...prev };
+                        delete newCursors[data.id];
+                        return newCursors;
+                    });
+                }
+            } catch (e) {
+                console.error("Failed to parse websocket message", e);
+            }
+        };
+
         const handleMouseMove = (e: MouseEvent) => {
-            // Simulated outgoing websocket message
-            /*
             if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
                 wsRef.current.send(JSON.stringify({
                     type: 'cursor_move',
@@ -26,28 +56,15 @@ export default function CollaborationLayer({ roomId }: { roomId: string }) {
                     name: 'Guest'
                 }));
             }
-            */
         };
 
         window.addEventListener('mousemove', handleMouseMove);
-        
-        // Simulate receiving a cursor move from another user
-        const interval = setInterval(() => {
-            setCursors(prev => ({
-                ...prev,
-                'mock_user_1': {
-                    x: (window.innerWidth / 2) + Math.sin(Date.now() / 1000) * 100,
-                    y: (window.innerHeight / 2) + Math.cos(Date.now() / 1000) * 100,
-                    name: 'Team Member'
-                }
-            }));
-        }, 50);
 
-        const ws = wsRef.current;
         return () => {
             window.removeEventListener('mousemove', handleMouseMove);
-            clearInterval(interval);
-            ws?.close();
+            if (wsRef.current) {
+                wsRef.current.close();
+            }
         };
     }, [roomId]);
 

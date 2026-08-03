@@ -11,21 +11,43 @@ provider.addScope('https://www.googleapis.com/auth/drive.file');
 let isSigningIn = false;
 let cachedAccessToken: string | null = null;
 
+// Helper to interact with our secure HttpOnly cookie API
+const tokenStorage = {
+  save: async (token: string) => {
+    await fetch('/api/auth/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accessToken: token }),
+    });
+    cachedAccessToken = token;
+  },
+  load: async () => {
+    const res = await fetch('/api/auth/token');
+    const data = await res.json();
+    cachedAccessToken = data.token;
+    return cachedAccessToken;
+  },
+  clear: async () => {
+    await fetch('/api/auth/token', { method: 'DELETE' });
+    cachedAccessToken = null;
+  }
+};
+
 export const initAuth = (
   onAuthSuccess?: (user: User, token: string) => void,
   onAuthFailure?: () => void
 ) => {
   return onAuthStateChanged(auth, async (user: User | null) => {
     if (user) {
-      if (cachedAccessToken) {
-        if (onAuthSuccess) onAuthSuccess(user, cachedAccessToken);
+      const token = await tokenStorage.load();
+      if (token) {
+        if (onAuthSuccess) onAuthSuccess(user, token);
       } else if (!isSigningIn) {
-        // If we have a user but no token in memory, we need them to re-authenticate to get a fresh OAuth token
-        cachedAccessToken = null;
+        // If we have a user but no token in memory/cookie, we need them to re-authenticate to get a fresh OAuth token
         if (onAuthFailure) onAuthFailure();
       }
     } else {
-      cachedAccessToken = null;
+      await tokenStorage.clear();
       if (onAuthFailure) onAuthFailure();
     }
   });
@@ -40,8 +62,8 @@ export const googleSignIn = async (): Promise<{ user: User; accessToken: string 
       throw new Error('Failed to get access token from Firebase Auth');
     }
 
-    cachedAccessToken = credential.accessToken;
-    return { user: result.user, accessToken: cachedAccessToken };
+    await tokenStorage.save(credential.accessToken);
+    return { user: result.user, accessToken: credential.accessToken };
   } catch (error: any) {
     console.error('Sign in error:', error);
     throw error;
@@ -51,10 +73,10 @@ export const googleSignIn = async (): Promise<{ user: User; accessToken: string 
 };
 
 export const getAccessToken = async (): Promise<string | null> => {
-  return cachedAccessToken;
+  return cachedAccessToken || await tokenStorage.load();
 };
 
 export const logout = async () => {
   await auth.signOut();
-  cachedAccessToken = null;
+  await tokenStorage.clear();
 };
