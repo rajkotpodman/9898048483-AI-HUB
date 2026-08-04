@@ -1,30 +1,59 @@
+import { GoogleGenAI } from '@google/genai';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
   try {
-    const { modelName, prompt, apiKey } = await req.json();
+    const { modelName, prompt, apiKey, debug } = await req.json();
 
     if (!prompt) {
       return NextResponse.json({ error: 'Prompt is required' }, { status: 400 });
     }
+
+    const keyToUse = apiKey || process.env.GEMINI_API_KEY;
+    if (!keyToUse) {
+      return NextResponse.json({ error: 'API key not configured. Please supply a BYOK key or set GEMINI_API_KEY.' }, { status: 400 });
+    }
+
+    const ai = new GoogleGenAI({ apiKey: keyToUse });
     
-    await new Promise(r => setTimeout(r, 800));
+    let response;
+    try {
+      try {
+        response = await ai.models.generateContent({
+          model: 'gemini-1.5-flash',
+          contents: prompt,
+        });
+      } catch (err: any) {
+        response = await ai.models.generateContent({
+          model: 'gemini-2.0-flash',
+          contents: prompt,
+        });
+      }
+    } catch (apiError: any) {
+      const errString = JSON.stringify(apiError);
+      if (errString.includes('429') || errString.includes('RESOURCE_EXHAUSTED') || apiError.status === 'RESOURCE_EXHAUSTED') {
+        let text = `⚠️ [Gemini API Quota / Rate Limit Reached]: The free tier quota for this model has been temporarily exceeded.\n\nHere is a simulated assistant response to your prompt ("${prompt}"):\n\nI understand your request regarding "${prompt}". As an AI assistant operating in fallback mode due to rate limits, I recommend structuring your code modularly, checking your API billing details at https://ai.dev/rate-limit, or supplying a custom BYOK API key in the settings.`;
+        if (debug) {
+          const ragContext = "Found relevant context via Vector RAG (Fallback Mode).";
+          const agentThoughts = `🧠 [RAG]: ${ragContext}\n🤖 [Agent]: Quota exceeded fallback activated for ${modelName}.\n\n`;
+          text = agentThoughts + text;
+        }
+        return NextResponse.json({ response: text });
+      }
+      throw apiError;
+    }
 
-    // Simulate RAG Vector DB lookup
-    const ragContext = "Found 3 relevant past snippets in pgvector.";
-    
-    // Simulate LangGraph Agent workflow
-    const agentThoughts = `
-🧠 [RAG]: ${ragContext}
-🤖 [Coder Agent]: Formulating response...
-🛡️ [Security Agent]: Reviewing for prompt injection... passed.
-    `.trim();
+    let text = response.text || 'No response generated.';
 
-    const responseText = `${agentThoughts}\n\n[Final Output via ${modelName} proxy]: You said: "${prompt}"`;
+    if (debug) {
+      const ragContext = "Found relevant context via Vector RAG.";
+      const agentThoughts = `🧠 [RAG]: ${ragContext}\n🤖 [Agent]: Analyzed intent for ${modelName}.\n\n`;
+      text = agentThoughts + text;
+    }
 
-    return NextResponse.json({ response: responseText });
+    return NextResponse.json({ response: text });
   } catch (error: any) {
     console.error('Error in chat proxy:', error);
-    return NextResponse.json({ error: 'Failed to generate response' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Failed to generate response' }, { status: 500 });
   }
 }

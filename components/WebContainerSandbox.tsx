@@ -5,7 +5,7 @@ import { WebContainer } from '@webcontainer/api';
 import { Terminal } from 'xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import 'xterm/css/xterm.css';
-import { Loader2, Play, TerminalSquare } from 'lucide-react';
+import { Loader2, Play, TerminalSquare, AlertTriangle } from 'lucide-react';
 
 let webcontainerPromise: Promise<WebContainer> | null = null;
 
@@ -15,9 +15,15 @@ export default function WebContainerSandbox({ code }: { code: string }) {
     const [iframeUrl, setIframeUrl] = useState<string>('');
     const [booting, setBooting] = useState(false);
     const [error, setError] = useState('');
+    const [isSupported, setIsSupported] = useState(true);
     const termRef = useRef<Terminal | null>(null);
 
     useEffect(() => {
+        if (typeof window !== 'undefined' && !window.crossOriginIsolated) {
+            setIsSupported(false);
+            return;
+        }
+
         let fitAddon: FitAddon;
         let term: Terminal;
         
@@ -33,12 +39,18 @@ export default function WebContainerSandbox({ code }: { code: string }) {
                 term.loadAddon(fitAddon);
                 term.open(terminalRef.current);
                 
-                // Avoid "reading 'dimensions'" error if container has no size yet
-                try {
-                    fitAddon.fit();
-                } catch (e) {
-                    console.warn("Could not fit terminal", e);
-                }
+                // Avoid "reading 'dimensions'" error by checking dimensions and using requestAnimationFrame / setTimeout
+                requestAnimationFrame(() => {
+                    setTimeout(() => {
+                        if (terminalRef.current && terminalRef.current.clientWidth > 0 && terminalRef.current.clientHeight > 0) {
+                            try {
+                                fitAddon.fit();
+                            } catch (e) {
+                                console.warn("Could not fit terminal", e);
+                            }
+                        }
+                    }, 100);
+                });
                 
                 term.write('Booting WebContainer...\r\n');
                 
@@ -120,6 +132,20 @@ export default function WebContainerSandbox({ code }: { code: string }) {
             }
         }));
     };
+
+    if (!isSupported) {
+        return (
+            <div className="flex flex-col h-[300px] border border-amber-500/30 rounded-xl overflow-hidden bg-slate-900 p-6 items-center justify-center text-center shadow-2xl">
+                <div className="bg-amber-500/20 text-amber-400 p-4 rounded-2xl mb-4 border border-amber-500/30">
+                    <AlertTriangle size={32} />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">Cross-Origin Isolation Required</h3>
+                <p className="text-sm text-slate-300 max-w-md">
+                    WebContainers CI/CD requires Cross-Origin Isolation headers. Preview mode is disabled in this frame, but code can still be edited and exported.
+                </p>
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col h-[500px] border border-slate-700 rounded-xl overflow-hidden bg-slate-900">

@@ -7,9 +7,15 @@ export function useLocalAI() {
     const workerRef = useRef<Worker | null>(null);
 
     useEffect(() => {
-        workerRef.current = new Worker(new URL('./localAIWorker.ts', import.meta.url), {
-            type: 'module'
-        });
+        if (typeof window !== 'undefined' && window.crossOriginIsolated) {
+            try {
+                workerRef.current = new Worker(new URL('./localAIWorker.ts', import.meta.url), {
+                    type: 'module'
+                });
+            } catch (e) {
+                console.warn("Failed to initialize local AI worker:", e);
+            }
+        }
         
         return () => {
             workerRef.current?.terminate();
@@ -19,7 +25,7 @@ export function useLocalAI() {
     const generateText = useCallback((text: string): Promise<string> => {
         return new Promise((resolve, reject) => {
             if (!workerRef.current) {
-                reject(new Error("Worker not initialized"));
+                reject(new Error("Local AI Worker requires cross-origin isolation (crossOriginIsolated)."));
                 return;
             }
             

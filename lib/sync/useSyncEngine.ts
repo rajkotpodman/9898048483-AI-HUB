@@ -11,18 +11,24 @@ export function useSyncEngine() {
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
 
   useEffect(() => {
-    // Initialize Worker
-    workerRef.current = new Worker(new URL('./syncWorker.ts', import.meta.url));
+    // Initialize Worker if crossOriginIsolated
+    if (typeof window !== 'undefined' && window.crossOriginIsolated) {
+      try {
+        workerRef.current = new Worker(new URL('./syncWorker.ts', import.meta.url));
 
-    workerRef.current.onmessage = (e) => {
-      const { type, taskId, filename, error } = e.data;
-      if (type === 'SYNC_SUCCESS') {
-        console.log(`[SyncEngine] Successfully synced ${filename}`);
-        setLastSyncTime(new Date());
-      } else if (type === 'SYNC_ERROR') {
-        console.error(`[SyncEngine] Failed to sync ${filename}: ${error}`);
+        workerRef.current.onmessage = (e) => {
+          const { type, taskId, filename, error } = e.data;
+          if (type === 'SYNC_SUCCESS') {
+            console.log(`[SyncEngine] Successfully synced ${filename}`);
+            setLastSyncTime(new Date());
+          } else if (type === 'SYNC_ERROR') {
+            console.error(`[SyncEngine] Failed to sync ${filename}: ${error}`);
+          }
+        };
+      } catch (e) {
+        console.warn("Failed to initialize sync worker:", e);
       }
-    };
+    }
 
     // Listen to Firebase Auth state
     const unsubscribe = initAuth(

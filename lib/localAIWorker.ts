@@ -6,6 +6,7 @@ env.allowLocalModels = false;
 env.useBrowserCache = true;
 if (env.backends?.onnx?.wasm) {
     env.backends.onnx.wasm.numThreads = 1;
+    env.backends.onnx.wasm.proxy = false;
 }
 
 class PipelineSingleton {

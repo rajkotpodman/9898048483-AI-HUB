@@ -16,6 +16,7 @@ export default function InteractionManager({ model, onClose }: { model: any, onC
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedCode, setGeneratedCode] = useState<string>('');
   const [useLocal, setUseLocal] = useState(false);
+  const [debugMode, setDebugMode] = useState(false);
   
   const { queueSync, isAuthenticated } = useSyncEngine();
   const localAI = useLocalAI();
@@ -47,11 +48,16 @@ export default function InteractionManager({ model, onClose }: { model: any, onC
         body: JSON.stringify({
           modelName: model.name,
           prompt: newMsg.content,
-          apiKey
+          apiKey,
+          debug: debugMode
         })
       });
       const data = await res.json();
       
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to generate response');
+      }
+
       const aiResponse = { role: 'ai' as const, content: data.response || 'No response' };
       const finalMessages = [...updatedMessages, aiResponse];
       setMessages(finalMessages);
@@ -61,9 +67,9 @@ export default function InteractionManager({ model, onClose }: { model: any, onC
         const conversationText = finalMessages.map(m => `${m.role.toUpperCase()}:\n${m.content}\n`).join('\n---\n');
         queueSync('CONVERSATION', `${model.name}_Chat_${Date.now()}.txt`, conversationText, 'GOOGLE_DRIVE');
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error('Chat error:', e);
-      setMessages([...updatedMessages, { role: 'ai' as const, content: 'Error communicating with backend.' }]);
+      setMessages([...updatedMessages, { role: 'ai' as const, content: `Error: ${e.message || 'Error communicating with backend.'}` }]);
     } finally {
       setIsGenerating(false);
     }
@@ -141,59 +147,37 @@ export default function InteractionManager({ model, onClose }: { model: any, onC
 
       <div className="flex-1 rounded-2xl overflow-hidden bg-slate-900/50 border border-slate-800 flex flex-col shadow-2xl">
         {mode === 'iframe' ? (
-          <div className="h-full w-full bg-slate-100 relative flex flex-col">
+          <div className="h-full w-full bg-slate-950 relative flex flex-col items-center justify-center p-6 text-center overflow-y-auto">
             {model.url ? (
-               <>
-                 <div className="bg-slate-800 border-b border-slate-700 p-2 flex items-center justify-between text-xs text-slate-300">
-                    <div className="flex items-center gap-2">
-                        <button 
-                            onClick={onClose}
-                            className="px-3 py-1.5 hover:bg-slate-700 rounded-md transition-colors flex items-center gap-1"
-                        >
-                            <X size={14} /> Back to AI List
-                        </button>
-                    </div>
-                    <div className="flex flex-1 items-center justify-center px-4 overflow-hidden text-ellipsis whitespace-nowrap text-slate-400 font-mono text-[10px]">
-                       <Globe size={12} className="inline mr-1" /> Proxy Session: {model.url}
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <button 
-                            onClick={() => {
-                                const iframe = document.getElementById('ai-iframe') as HTMLIFrameElement;
-                                if (iframe) iframe.src = iframe.src;
-                            }}
-                            className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-md transition-colors"
-                        >
-                            Reload Page
-                        </button>
-                        <button 
-                            onClick={() => window.open(model.url, '_blank')}
-                            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-md transition-colors flex items-center gap-1"
-                        >
-                            <Maximize2 size={14} /> External Tab
-                        </button>
-                        <button 
-                            onClick={() => {
-                                // Simulate logout
-                                alert("Session cleared locally. (Note: True cross-origin logout requires external tab due to iframe security)");
-                            }}
-                            className="px-3 py-1.5 bg-red-500/20 text-red-400 hover:bg-red-500/30 rounded-md transition-colors"
-                        >
-                            Clear Session
-                        </button>
-                    </div>
-                 </div>
-                 <iframe 
-                    id="ai-iframe"
-                    src={model.url} 
-                    className="flex-1 w-full border-0" 
-                    title={`${model.name} Sandbox`}
-                    referrerPolicy="strict-origin-when-cross-origin"
-                    sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation allow-downloads"
-                    allow="cross-origin-isolated; clipboard-read; clipboard-write; microphone; camera; display-capture"
-                 />
-               </>
-             ) : (
+               <div className="max-w-xl bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl flex flex-col items-center my-auto">
+                  <div className="bg-blue-600/20 text-blue-400 p-4 rounded-2xl mb-4 border border-blue-500/30">
+                     <Globe size={40} />
+                  </div>
+                  <h3 className="text-2xl font-bold text-white mb-2">{model.name} Launch Center</h3>
+                  <p className="text-sm text-slate-400 mb-6">
+                     Access <strong className="text-slate-200">{model.name}</strong> securely in a dedicated pop-up window or switch to the direct chat canvas.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-3 justify-center w-full mb-6">
+                     <button
+                        onClick={() => window.open(model.url, '_blank', 'width=1200,height=800')}
+                        className="flex-1 px-6 py-3.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold flex items-center justify-center gap-2 shadow-lg shadow-blue-600/30 transition-all cursor-pointer"
+                     >
+                        <Maximize2 size={16} /> Open {model.name} in New Secure Window
+                     </button>
+                     <button
+                        onClick={() => setMode('chat')}
+                        className="px-6 py-3.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl font-semibold flex items-center justify-center gap-2 border border-slate-700 transition-all cursor-pointer"
+                     >
+                        <MessageSquare size={16} /> Direct Chat Canvas
+                     </button>
+                  </div>
+                  <div className="w-full pt-2 text-center">
+                     <span className="inline-block px-3 py-1.5 rounded-full text-xs font-medium bg-slate-800/80 text-slate-400 border border-slate-700/60">
+                        Protected External Connection • Opens full AI experience in a secure pop-up window with Google Auth support.
+                     </span>
+                  </div>
+               </div>
+            ) : (
                <div className="flex items-center justify-center h-full bg-slate-900 text-slate-400 p-6">
                   <div className="text-center max-w-md">
                     <Globe size={48} className="mx-auto mb-4 opacity-30 text-blue-400" />
@@ -207,7 +191,7 @@ export default function InteractionManager({ model, onClose }: { model: any, onC
                     </button>
                   </div>
                </div>
-             )}
+            )}
           </div>
         ) : mode === 'chat' ? (
           <div className="p-4 h-full flex flex-col max-w-4xl mx-auto w-full">
@@ -227,6 +211,15 @@ export default function InteractionManager({ model, onClose }: { model: any, onC
                >
                  <Cpu size={14} />
                  {useLocal ? 'Local AI: ON' : 'Local AI: OFF'}
+               </button>
+
+               <button 
+                 onClick={() => setDebugMode(!debugMode)}
+                 className={`px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border transition-all ${debugMode ? 'bg-amber-500/20 border-amber-500/40 text-amber-300' : 'bg-slate-800 border-slate-700 text-slate-400'}`}
+                 title="Toggle Debug Agent Thought Prefixes"
+               >
+                 <Bot size={14} />
+                 {debugMode ? 'Debug: ON' : 'Debug: OFF'}
                </button>
 
                {isAuthenticated && (

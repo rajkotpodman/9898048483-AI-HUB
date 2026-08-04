@@ -4,9 +4,10 @@ import { Search, Bot, Loader2, RefreshCw, Sparkles, Filter, Globe, Zap, Radio } 
 import AICard from './AICard';
 import InteractionManager from './InteractionManager';
 import CloudBackupModal from './CloudBackupModal';
+import fallbackModels from '@/data/models.json';
 
 export default function AIHub() {
-    const [models, setModels] = useState<any[]>([]);
+    const [models, setModels] = useState<any[]>(fallbackModels);
     const [favorites, setFavorites] = useState<string[]>([]);
     const [activeTab, setActiveTab] = useState('All');
     const [searchQuery, setSearchQuery] = useState('');
@@ -18,7 +19,7 @@ export default function AIHub() {
     // Auto-sync state
     const [autoSyncEnabled, setAutoSyncEnabled] = useState(true);
     const [lastSyncTime, setLastSyncTime] = useState<string>('Just now');
-    const prevModelsLengthRef = useRef<number>(0);
+    const prevModelsLengthRef = useRef<number>(fallbackModels.length);
     
     const tabs = ['All', 'Live Web', 'Favorites', 'General AI', 'Developer & Code', 'Research & Search', 'Roleplay & Niche', 'Creative & Media'];
 
@@ -32,24 +33,77 @@ export default function AIHub() {
         else setSyncing(true);
 
         try {
+            const response = await fetch('https://silentcoderhere.github.io/aihub-config-data/ais.json');
+            if (response.ok) {
+                const data = await response.json();
+                const rawList = Array.isArray(data) ? data : (data.models || data.data || []);
+                if (Array.isArray(rawList) && rawList.length > 0) {
+                    const parsedModels = rawList.map((m: any, index: number) => {
+                        const id = m.id || m.modelId || `model-${index}`;
+                        const name = m.name || m.title || id;
+                        const idLower = id.toLowerCase();
+
+                        let category = m.category || 'General AI';
+                        let color = m.color || 'bg-blue-500';
+
+                        if (idLower.includes('code') || idLower.includes('coder') || idLower.includes('dev') || idLower.includes('starcoder')) {
+                            category = 'Developer & Code';
+                            color = 'bg-emerald-500';
+                        } else if (idLower.includes('flux') || idLower.includes('stable') || idLower.includes('image') || idLower.includes('midjourney') || idLower.includes('suno') || idLower.includes('runway')) {
+                            category = 'Creative & Media';
+                            color = 'bg-purple-500';
+                        } else if (idLower.includes('deepseek') || idLower.includes('math') || idLower.includes('paper') || idLower.includes('research') || idLower.includes('perplexity')) {
+                            category = 'Research & Search';
+                            color = 'bg-cyan-500';
+                        } else if (idLower.includes('roleplay') || idLower.includes('mythomax') || idLower.includes('wizard') || idLower.includes('character')) {
+                            category = 'Roleplay & Niche';
+                            color = 'bg-amber-500';
+                        } else if (idLower.includes('claude') || idLower.includes('gpt') || idLower.includes('gemini') || idLower.includes('llama')) {
+                            category = 'General AI';
+                            color = idLower.includes('claude') ? 'bg-orange-500' : idLower.includes('gemini') ? 'bg-pink-500' : 'bg-blue-600';
+                        }
+
+                        return {
+                            id: `web-${id.replace(/[\/:]/g, '-')}`,
+                            name,
+                            category,
+                            color,
+                            description: m.description || `Popular AI model synced from remote config.`,
+                            url: m.url || `https://openrouter.ai/models/${id}`,
+                            isWebDiscovered: true,
+                            isNew: true,
+                            discoveredAt: new Date().toISOString(),
+                            ...m
+                        };
+                    });
+
+                    if (isAuto && prevModelsLengthRef.current > 0 && parsedModels.length > prevModelsLengthRef.current) {
+                        const diff = parsedModels.length - prevModelsLengthRef.current;
+                        showToast(`✨ Auto-detected ${diff} new models from remote sync!`);
+                    }
+
+                    setModels(parsedModels);
+                    prevModelsLengthRef.current = parsedModels.length;
+                    setLastSyncTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+                    if (!isAuto) showToast(`Successfully loaded ${parsedModels.length} models from remote config!`);
+                    return;
+                }
+            }
+
+            // Fallback to local API or static data if direct fetch fails
             const url = isAuto ? '/api/v1/models?autoSync=true' : '/api/v1/models';
             const res = await fetch(url);
             if (res.ok) {
                 const listData = await res.json();
-                
-                if (isAuto && prevModelsLengthRef.current > 0 && listData.length > prevModelsLengthRef.current) {
-                    const diff = listData.length - prevModelsLengthRef.current;
-                    showToast(`✨ Auto-detected ${diff} new popular models from the web!`);
+                if (Array.isArray(listData) && listData.length > 0) {
+                    setModels(listData);
+                    prevModelsLengthRef.current = listData.length;
+                    setLastSyncTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
                 }
-                
-                setModels(listData);
-                prevModelsLengthRef.current = listData.length;
-                setLastSyncTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-            } else {
-                console.error('Failed to fetch models: HTTP', res.status);
             }
         } catch (error) {
-            console.error('Failed to fetch models', error);
+            console.error('Failed to fetch remote models, using local fallback', error);
+            setModels(fallbackModels);
         } finally {
             setLoading(false);
             setSyncing(false);
