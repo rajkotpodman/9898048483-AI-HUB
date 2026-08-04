@@ -7,13 +7,14 @@
 ![Status](https://img.shields.io/badge/Status-Production%20Ready-success?style=for-the-badge)
 
 ---
+https://9898048483.ai.studio/
 
 ## 🌟 Executive Summary
 
 **9898048483 Android AI / AI Hub Enterprise Platform** is the definitive, next-generation AI portal engineered to unify **183 elite artificial intelligence models, foundational LLMs, specialized neural agents, and creative engines** into a single, lightning-fast, secure mobile and web workspace. 
 
 Designed for power users, developers, researchers, and enterprise teams, this platform eliminates context switching by centralizing access to industry giants, open-weight breakthroughs, specialized domain experts, and avant-garde creative models with granular session management, remote dynamic catalog syncing, and robust security safeguards.
-
+https://9898048483.ai.studio/
 ---
 
 ## 🏛️ Architectural Overview
@@ -41,7 +42,7 @@ Designed for power users, developers, researchers, and enterprise teams, this pl
 ```
 
 ---
-
+https://9898048483.ai.studio/
 ## 🧠 Comprehensive Master Directory of All 183 Integrated AI Models & Services
 
 The platform features a meticulously curated, dynamically updatable catalog comprising **183 distinct AI models and services**, organized into specialized functional tiers:
@@ -77,7 +78,7 @@ The platform features a meticulously curated, dynamically updatable catalog comp
 28. **YouAI** — Personalized custom AI assistant builder.
 29. **Together AI** — Cloud-accelerated open-source model inference.
 30. **SecAI** — Security-hardened threat analysis conversational agent.
-
+https://9898048483.ai.studio/
 ### Tier 2: Academic, Research & Specialized Data (Models 31 – 60)
 31. **Mammouth AI** — High-capacity dense model inference hub.
 32. **TurboSeek** — Ultra-fast semantic retrieval engine.
@@ -109,7 +110,7 @@ The platform features a meticulously curated, dynamically updatable catalog comp
 58. **Mercury** — High-velocity data processing agent.
 59. **Baidu Wenxin** — Comprehensive Chinese knowledge graph LLM.
 60. **Baidu Yiyan** — Ernie-powered conversational dialogue node.
-
+https://9898048483.ai.studio/
 ### Tier 3: Enterprise, Regional & Coding Powerhouses (Models 61 – 90)
 61. **MiniMax** — Ultra-long context and affective dialogue specialist.
 62. **Zhipu Qingyan** — GLM-powered bilingual assistant.
@@ -141,7 +142,7 @@ The platform features a meticulously curated, dynamically updatable catalog comp
 88. **Deep AI** — Rapid prototyping image and text generator.
 89. **Free Stock AI** — Royalty-free asset curation agent.
 90. **DeepCogito** — Philosophical reasoning and thought experiment engine.
-
+https://9898048483.ai.studio/
 ### Tier 4: Creative, Uncensored & Experimental Hubs (Models 91 – 120)
 91. **Base44** — Rapid backend and schema generator.
 92. **Janitor AI** — Unrestricted NSFW/SFW roleplay platform.
@@ -173,7 +174,7 @@ The platform features a meticulously curated, dynamically updatable catalog comp
 118. **ChatMinerva** — Classical knowledge and humanities expert.
 119. **MiniMax Code** — Specialized programming and debugging assistant.
 120. **DeepSeek (Deutsch)** — German-optimized DeepSeek inference node.
-
+https://9898048483.ai.studio/
 ### Tier 5: Developer Agents, Audio, Vision & Utilities (Models 121 – 155)
 121. **Zapia** — Latin American mobile-first assistant.
 122. **Cursor Agents** — AI-native code editing and refactoring agent.
@@ -210,7 +211,7 @@ The platform features a meticulously curated, dynamically updatable catalog comp
 153. **Eraser** — Diagramming and architecture visualization generator.
 154. **WebSim AI** — Rapid interactive webpage prototyping engine.
 155. **Gamma** — AI-powered presentation and document builder.
-
+https://9898048483.ai.studio/
 ### Tier 6: Specialized Multimedia, Tools & Cutting-Edge (Models 156 – 183)
 156. **AI Face Swap** — High-fidelity facial substitution tool.
 157. **Nano Banana 2** — Experimental vision model.
@@ -242,7 +243,7 @@ The platform features a meticulously curated, dynamically updatable catalog comp
 183. **Grok 2 Vision** — Multimodal real-time image understanding agent.
 
 ---
-
+https://9898048483.ai.studio/
 ## 🚀 Key Platform Features
 
 - 🧠 **183 Preloaded Models**: Instant access to the world's most comprehensive AI model catalog.
@@ -253,7 +254,7 @@ The platform features a meticulously curated, dynamically updatable catalog comp
 - 🎨 **Modern Material 3 / Tailwind UI**: Crafted with responsive layouts, dark/light modes, and fluid touch interactions.
 
 ---
-
+https://9898048483.ai.studio/
 ## 🛠️ Build & Installation Instructions
 
 ### Prerequisites
@@ -280,7 +281,7 @@ npm start
 ```
 
 ---
-
+https://9898048483.ai.studio/
 ## 🤝 Contributing & Support
 
 Contributions, model additions, and security audits are welcome. Please ensure all pull requests maintain the project's strict privacy-first and zero-tracking standard.
