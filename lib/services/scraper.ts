@@ -59,6 +59,7 @@ export async function scrapeModels(forceRefresh = false) {
                     category,
                     color,
                     description: fullDesc,
+                    url: `https://openrouter.ai/models/${m.id}`,
                     isWebDiscovered: true,
                     isNew: true,
                     discoveredAt: new Date().toISOString(),

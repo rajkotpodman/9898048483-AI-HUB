@@ -1,17 +1,24 @@
 'use client'
 import { useState, useRef, useEffect } from 'react';
-import { X, Globe, MessageSquare, Maximize2, Send, Code, Loader2, Bot } from 'lucide-react';
+import { X, Globe, MessageSquare, Maximize2, Send, Code, Loader2, Bot, Cpu, TerminalSquare } from 'lucide-react';
 import { useSyncEngine } from '../lib/sync/useSyncEngine';
+import dynamic from 'next/dynamic';
+import { useLocalAI } from '../lib/useLocalAI';
+
+const SharedPromptEditor = dynamic(() => import('./SharedPromptEditor'), { ssr: false });
+const WebContainerSandbox = dynamic(() => import('./WebContainerSandbox'), { ssr: false });
 
 export default function InteractionManager({ model, onClose }: { model: any, onClose: () => void }) {
-  const [mode, setMode] = useState<'iframe' | 'chat' | 'arena'>('iframe');
+  const [mode, setMode] = useState<'iframe' | 'chat' | 'arena' | 'sandbox'>('iframe');
   const [messages, setMessages] = useState<{role: 'user' | 'ai', content: string}[]>([]);
   const [prompt, setPrompt] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedCode, setGeneratedCode] = useState<string>('');
+  const [useLocal, setUseLocal] = useState(false);
   
   const { queueSync, isAuthenticated } = useSyncEngine();
+  const localAI = useLocalAI();
 
   const handleSendPrompt = async () => {
     if (!prompt.trim()) return;
@@ -20,6 +27,18 @@ export default function InteractionManager({ model, onClose }: { model: any, onC
     setMessages(updatedMessages);
     setPrompt('');
     setIsGenerating(true);
+
+    if (useLocal) {
+        try {
+            const localResult = await localAI.generateText(newMsg.content);
+            setMessages(prev => [...prev, { role: 'ai', content: `[Local WebGPU/Worker] ${localResult}` }]);
+        } catch (e) {
+            setMessages(prev => [...prev, { role: 'ai', content: 'Local AI Error.' }]);
+        } finally {
+            setIsGenerating(false);
+        }
+        return;
+    }
 
     try {
       const res = await fetch('/api/chat', {
@@ -66,6 +85,7 @@ export default function InteractionManager({ model, onClose }: { model: any, onC
       });
       const data = await res.json();
       setGeneratedCode(data.code || '');
+      setMode('sandbox'); // Switch to sandbox mode automatically
 
       if (isAuthenticated) {
         // Backup generated code
@@ -103,7 +123,13 @@ export default function InteractionManager({ model, onClose }: { model: any, onC
           onClick={() => setMode('chat')}
           className={`px-4 py-2 rounded-full text-sm font-semibold flex items-center gap-2 whitespace-nowrap transition-colors ${mode === 'chat' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
         >
-          <MessageSquare size={16} /> Chat & Prompts
+          <MessageSquare size={16} /> Chat & CRDT
+        </button>
+        <button 
+          onClick={() => setMode('sandbox')}
+          className={`px-4 py-2 rounded-full text-sm font-semibold flex items-center gap-2 whitespace-nowrap transition-colors ${mode === 'sandbox' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
+        >
+          <TerminalSquare size={16} /> WebContainers CI/CD
         </button>
         <button 
           onClick={() => setMode('arena')}
@@ -115,32 +141,104 @@ export default function InteractionManager({ model, onClose }: { model: any, onC
 
       <div className="flex-1 rounded-2xl overflow-hidden bg-slate-900/50 border border-slate-800 flex flex-col shadow-2xl">
         {mode === 'iframe' ? (
-          <div className="h-full w-full bg-slate-100 relative">
-             <iframe 
-                src={model.url || 'https://google.com'} 
-                className="w-full h-full border-0" 
-                title={`${model.name} Sandbox`}
-                referrerPolicy="no-referrer"
-             />
+          <div className="h-full w-full bg-slate-100 relative flex flex-col">
+            {model.url ? (
+               <>
+                 <div className="bg-slate-800 border-b border-slate-700 p-2 flex items-center justify-between text-xs text-slate-300">
+                    <div className="flex items-center gap-2">
+                        <button 
+                            onClick={onClose}
+                            className="px-3 py-1.5 hover:bg-slate-700 rounded-md transition-colors flex items-center gap-1"
+                        >
+                            <X size={14} /> Back to AI List
+                        </button>
+                    </div>
+                    <div className="flex flex-1 items-center justify-center px-4 overflow-hidden text-ellipsis whitespace-nowrap text-slate-400 font-mono text-[10px]">
+                       <Globe size={12} className="inline mr-1" /> Proxy Session: {model.url}
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <button 
+                            onClick={() => {
+                                const iframe = document.getElementById('ai-iframe') as HTMLIFrameElement;
+                                if (iframe) iframe.src = iframe.src;
+                            }}
+                            className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-md transition-colors"
+                        >
+                            Reload Page
+                        </button>
+                        <button 
+                            onClick={() => window.open(model.url, '_blank')}
+                            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-md transition-colors flex items-center gap-1"
+                        >
+                            <Maximize2 size={14} /> External Tab
+                        </button>
+                        <button 
+                            onClick={() => {
+                                // Simulate logout
+                                alert("Session cleared locally. (Note: True cross-origin logout requires external tab due to iframe security)");
+                            }}
+                            className="px-3 py-1.5 bg-red-500/20 text-red-400 hover:bg-red-500/30 rounded-md transition-colors"
+                        >
+                            Clear Session
+                        </button>
+                    </div>
+                 </div>
+                 <iframe 
+                    id="ai-iframe"
+                    src={model.url} 
+                    className="flex-1 w-full border-0" 
+                    title={`${model.name} Sandbox`}
+                    referrerPolicy="strict-origin-when-cross-origin"
+                    sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation allow-downloads"
+                    allow="cross-origin-isolated; clipboard-read; clipboard-write; microphone; camera; display-capture"
+                 />
+               </>
+             ) : (
+               <div className="flex items-center justify-center h-full bg-slate-900 text-slate-400 p-6">
+                  <div className="text-center max-w-md">
+                    <Globe size={48} className="mx-auto mb-4 opacity-30 text-blue-400" />
+                    <h3 className="text-xl font-semibold text-slate-300 mb-2">Web Preview Unavailable</h3>
+                    <p className="text-sm">There is no interactive web view configured for <strong>{model.name}</strong> in the registry.</p>
+                    <button 
+                      onClick={() => setMode('chat')}
+                      className="mt-6 px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-semibold transition-colors"
+                    >
+                      Switch to Chat Mode
+                    </button>
+                  </div>
+               </div>
+             )}
           </div>
         ) : mode === 'chat' ? (
           <div className="p-4 h-full flex flex-col max-w-4xl mx-auto w-full">
-            <div className="mb-4 flex items-center gap-3">
+            <div className="mb-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                <input 
                   type="password" 
-                  placeholder="Enter Provider API Key (BYOK) - Stays local" 
+                  placeholder="Enter Provider API Key (BYOK) - Proxied Securely" 
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
-                  className="w-full p-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm focus:ring-2 focus:ring-blue-500/50 outline-none"
+                  className="w-full sm:flex-1 p-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-sm focus:ring-2 focus:ring-blue-500/50 outline-none"
                />
+               
+               <button 
+                 onClick={() => setUseLocal(!useLocal)}
+                 className={`px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 border transition-all ${useLocal ? 'bg-purple-500/20 border-purple-500/40 text-purple-300' : 'bg-slate-800 border-slate-700 text-slate-400'}`}
+                 title="Run Transformers.js entirely in browser Web Worker"
+               >
+                 <Cpu size={14} />
+                 {useLocal ? 'Local AI: ON' : 'Local AI: OFF'}
+               </button>
+
                {isAuthenticated && (
-                 <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/20 whitespace-nowrap">
+                 <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-2 rounded-xl border border-emerald-500/20 whitespace-nowrap">
                    Cloud Backup ON
                  </span>
                )}
             </div>
             
-            <div className="flex-1 bg-slate-800/50 border border-slate-800 rounded-xl p-4 overflow-y-auto mb-4 flex flex-col gap-3">
+            <SharedPromptEditor roomId="global-room" />
+
+            <div className="flex-1 bg-slate-800/50 border border-slate-800 rounded-xl p-4 mt-4 overflow-y-auto mb-4 flex flex-col gap-3">
               {messages.length === 0 ? (
                 <div className="text-center text-slate-500 my-auto text-sm">
                   Start a conversation with {model.name}.<br/>
@@ -155,7 +253,7 @@ export default function InteractionManager({ model, onClose }: { model: any, onC
               )}
               {isGenerating && (
                 <div className="p-3 rounded-xl bg-slate-700/30 text-slate-400 self-start flex items-center gap-2 text-sm border border-slate-700">
-                  <Loader2 size={14} className="animate-spin" /> Generating...
+                  <Loader2 size={14} className="animate-spin" /> {useLocal && localAI.status === 'loading' ? `Loading Local AI Model (${Math.round(localAI.progress?.progress || 0)}%)` : 'Generating...'}
                 </div>
               )}
             </div>
@@ -179,23 +277,22 @@ export default function InteractionManager({ model, onClose }: { model: any, onC
                 </button>
                 <button 
                   onClick={handleGenerateCode}
-                  disabled={isGenerating || !prompt.trim()}
-                  title="Generate Code & Backup"
+                  disabled={isGenerating || !prompt.trim() || useLocal}
+                  title="Generate Code & Run in Sandbox"
                   className="px-4 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-xl flex items-center justify-center transition-colors"
                 >
                   <Code size={18} />
                 </button>
               </div>
-              
-              {generatedCode && (
-                <div className="mt-2 p-3 bg-slate-900 border border-slate-700 rounded-xl relative group">
-                  <span className="absolute right-3 top-2 text-[10px] text-slate-500 uppercase font-bold">Generated Code</span>
-                  <pre className="text-xs text-emerald-400 overflow-x-auto p-2">
-                    {generatedCode}
-                  </pre>
-                </div>
-              )}
             </div>
+          </div>
+        ) : mode === 'sandbox' ? (
+          <div className="p-4 h-full flex flex-col max-w-5xl mx-auto w-full">
+            <div className="mb-4">
+              <h3 className="text-white font-semibold text-lg">WebContainer Sandbox (WASM CI/CD)</h3>
+              <p className="text-sm text-slate-400">Instantly execute and preview generated code in a full Node.js environment running securely inside your browser.</p>
+            </div>
+            <WebContainerSandbox code={generatedCode} />
           </div>
         ) : (
           <div className="p-4 h-full flex gap-4 w-full text-slate-300">

@@ -136,17 +136,28 @@ export default function AIHub() {
                             <Bot size={28} />
                         </div>
                         <div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2 mb-1">
                                 <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-slate-400">
-                                    AI Hub
+                                    9898048483 AI Hub
                                 </h1>
                                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 flex items-center gap-1">
                                     <Globe size={11} className="animate-pulse" /> Live Auto-Sync
                                 </span>
                             </div>
-                            <p className="text-xs sm:text-sm text-slate-400">
+                            <p className="text-xs sm:text-sm text-slate-400 mb-3">
                                 Discover, compare, and launch interactive AI models (auto-updated from live web sources)
                             </p>
+                            <div className="flex flex-wrap items-center gap-2">
+                                <button onClick={() => window.open('https://wa.me/919898048483', '_blank')} className="px-2.5 py-1.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-md text-[10px] font-bold hover:bg-amber-500/20 transition-colors">
+                                    ⚡ BUY NOW PRO (APPOINTMENT)
+                                </button>
+                                <button onClick={() => window.open('https://docs.google.com/forms/d/e/1FAIpQLScJ7WjuxEXqdoSlUtxN7NQ8UeKpbEAeA9iIO-IXOmBmYzlLHQ/viewform?usp=sharing&ouid=116676179363878319046', '_blank')} className="px-2.5 py-1.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-md text-[10px] font-bold hover:bg-emerald-500/20 transition-colors">
+                                    🪙 DONATION SYSTEM
+                                </button>
+                                <button onClick={() => window.open('https://wa.me/c/919898048483', '_blank')} className="px-2.5 py-1.5 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-md text-[10px] font-bold hover:bg-blue-500/20 transition-colors">
+                                    🛒 OFFICIAL DIGITAL STORE
+                                </button>
+                            </div>
                         </div>
                     </div>
 

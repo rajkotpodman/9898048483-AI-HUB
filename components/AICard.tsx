@@ -73,11 +73,25 @@ export default function AICard({
         <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-800 text-slate-300 border border-slate-700/50">
           {model.category || 'General AI'}
         </span>
-        <span className="inline-flex items-center gap-1 text-blue-400 font-medium group-hover:translate-x-0.5 transition-transform">
-          <Sparkles size={13} />
-          <span>Launch</span>
-          <ExternalLink size={12} className="ml-0.5" />
-        </span>
+        <div className="flex items-center gap-2">
+          <button 
+            type="button"
+            onClick={(e) => {
+                e.stopPropagation();
+                const url = model.url || `https://google.com/search?q=${encodeURIComponent(model.name + " AI")}`;
+                window.open(url, '_blank');
+            }}
+            className="inline-flex items-center gap-1 text-slate-400 hover:text-blue-400 font-medium transition-colors px-1.5 py-0.5 rounded hover:bg-slate-800"
+            title="Open in External Tab"
+          >
+             <ExternalLink size={12} />
+             <span className="hidden sm:inline">External Tab</span>
+          </button>
+          <span className="inline-flex items-center gap-1 text-blue-400 font-medium group-hover:translate-x-0.5 transition-transform ml-1">
+            <Sparkles size={13} />
+            <span>Launch</span>
+          </span>
+        </div>
       </div>
     </div>
   );

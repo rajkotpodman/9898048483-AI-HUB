@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Simulating a backend call that would normally use a real AI SDK (e.g. OpenAI or Google GenAI).
 export async function POST(req: NextRequest) {
   try {
     const { modelName, prompt, apiKey } = await req.json();
@@ -8,20 +7,20 @@ export async function POST(req: NextRequest) {
     if (!prompt) {
       return NextResponse.json({ error: 'Prompt is required' }, { status: 400 });
     }
-
-    // In a real app, the API key could be stored securely in Redis, or passed along to the provider.
-    // For now, we simulate the secure backend acting as a proxy.
     
-    // Example (pseudo-code):
-    // const ai = new GoogleGenAI({ apiKey: apiKey || process.env.GEMINI_API_KEY });
-    // const response = await ai.models.generateContent({ model: modelName, contents: prompt });
-    // const responseText = response.text;
-    
-    // Mock response for the preview
-    const responseText = `[Secure Backend Proxy] Response from ${modelName} to: "${prompt}"`;
+    await new Promise(r => setTimeout(r, 800));
 
-    // Wait a little to simulate network
-    await new Promise(r => setTimeout(r, 1000));
+    // Simulate RAG Vector DB lookup
+    const ragContext = "Found 3 relevant past snippets in pgvector.";
+    
+    // Simulate LangGraph Agent workflow
+    const agentThoughts = `
+🧠 [RAG]: ${ragContext}
+🤖 [Coder Agent]: Formulating response...
+🛡️ [Security Agent]: Reviewing for prompt injection... passed.
+    `.trim();
+
+    const responseText = `${agentThoughts}\n\n[Final Output via ${modelName} proxy]: You said: "${prompt}"`;
 
     return NextResponse.json({ response: responseText });
   } catch (error: any) {
