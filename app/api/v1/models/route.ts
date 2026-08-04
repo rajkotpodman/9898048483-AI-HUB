@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { scrapeModels } from '@/lib/services/scraper';
 import fallbackModels from '@/data/models.json';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);

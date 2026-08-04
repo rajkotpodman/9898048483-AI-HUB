@@ -9,7 +9,7 @@ const SharedPromptEditor = dynamic(() => import('./SharedPromptEditor'), { ssr: 
 const WebContainerSandbox = dynamic(() => import('./WebContainerSandbox'), { ssr: false });
 
 export default function InteractionManager({ model, onClose }: { model: any, onClose: () => void }) {
-  const [mode, setMode] = useState<'iframe' | 'chat' | 'arena' | 'sandbox'>('iframe');
+  const [mode, setMode] = useState<'chat' | 'arena' | 'sandbox'>('chat');
   const [messages, setMessages] = useState<{role: 'user' | 'ai', content: string}[]>([]);
   const [prompt, setPrompt] = useState('');
   const [apiKey, setApiKey] = useState('');
@@ -113,18 +113,23 @@ export default function InteractionManager({ model, onClose }: { model: any, onC
             {model.category}
           </span>
         </h2>
-        <button onClick={onClose} className="p-2 bg-slate-800 hover:bg-slate-700 rounded-full transition-colors">
-          <X size={20} />
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => {
+              const url = model.url || `https://openrouter.ai/models/${model.id?.replace(/^web-/, '') || model.name}`;
+              window.open(url, '_blank');
+            }}
+            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all"
+          >
+            <Globe size={14} /> Open in Tab
+          </button>
+          <button onClick={onClose} className="p-2 bg-slate-800 hover:bg-slate-700 rounded-full transition-colors text-white">
+            <X size={20} />
+          </button>
+        </div>
       </header>
 
       <div className="flex gap-2 mb-4 overflow-x-auto pb-1 scrollbar-none">
-        <button 
-          onClick={() => setMode('iframe')}
-          className={`px-4 py-2 rounded-full text-sm font-semibold flex items-center gap-2 whitespace-nowrap transition-colors ${mode === 'iframe' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
-        >
-          <Globe size={16} /> Web Sandbox
-        </button>
         <button 
           onClick={() => setMode('chat')}
           className={`px-4 py-2 rounded-full text-sm font-semibold flex items-center gap-2 whitespace-nowrap transition-colors ${mode === 'chat' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
@@ -146,54 +151,7 @@ export default function InteractionManager({ model, onClose }: { model: any, onC
       </div>
 
       <div className="flex-1 rounded-2xl overflow-hidden bg-slate-900/50 border border-slate-800 flex flex-col shadow-2xl">
-        {mode === 'iframe' ? (
-          <div className="h-full w-full bg-slate-950 relative flex flex-col items-center justify-center p-6 text-center overflow-y-auto">
-            {model.url ? (
-               <div className="max-w-xl bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl flex flex-col items-center my-auto">
-                  <div className="bg-blue-600/20 text-blue-400 p-4 rounded-2xl mb-4 border border-blue-500/30">
-                     <Globe size={40} />
-                  </div>
-                  <h3 className="text-2xl font-bold text-white mb-2">{model.name} Launch Center</h3>
-                  <p className="text-sm text-slate-400 mb-6">
-                     Access <strong className="text-slate-200">{model.name}</strong> securely in a dedicated pop-up window or switch to the direct chat canvas.
-                  </p>
-                  <div className="flex flex-col sm:flex-row gap-3 justify-center w-full mb-6">
-                     <button
-                        onClick={() => window.open(model.url, '_blank', 'width=1200,height=800')}
-                        className="flex-1 px-6 py-3.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold flex items-center justify-center gap-2 shadow-lg shadow-blue-600/30 transition-all cursor-pointer"
-                     >
-                        <Maximize2 size={16} /> Open {model.name} in New Secure Window
-                     </button>
-                     <button
-                        onClick={() => setMode('chat')}
-                        className="px-6 py-3.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl font-semibold flex items-center justify-center gap-2 border border-slate-700 transition-all cursor-pointer"
-                     >
-                        <MessageSquare size={16} /> Direct Chat Canvas
-                     </button>
-                  </div>
-                  <div className="w-full pt-2 text-center">
-                     <span className="inline-block px-3 py-1.5 rounded-full text-xs font-medium bg-slate-800/80 text-slate-400 border border-slate-700/60">
-                        Protected External Connection • Opens full AI experience in a secure pop-up window with Google Auth support.
-                     </span>
-                  </div>
-               </div>
-            ) : (
-               <div className="flex items-center justify-center h-full bg-slate-900 text-slate-400 p-6">
-                  <div className="text-center max-w-md">
-                    <Globe size={48} className="mx-auto mb-4 opacity-30 text-blue-400" />
-                    <h3 className="text-xl font-semibold text-slate-300 mb-2">Web Preview Unavailable</h3>
-                    <p className="text-sm">There is no interactive web view configured for <strong>{model.name}</strong> in the registry.</p>
-                    <button 
-                      onClick={() => setMode('chat')}
-                      className="mt-6 px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-semibold transition-colors"
-                    >
-                      Switch to Chat Mode
-                    </button>
-                  </div>
-               </div>
-            )}
-          </div>
-        ) : mode === 'chat' ? (
+        {mode === 'chat' ? (
           <div className="p-4 h-full flex flex-col max-w-4xl mx-auto w-full">
             <div className="mb-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                <input 

@@ -355,7 +355,11 @@ export default function AIHub() {
                                     model={model} 
                                     isFavorite={favorites.includes(modelId)}
                                     onToggleFavorite={() => toggleFavorite(modelId)}
-                                    onSelect={() => setSelectedModel(model)}
+                                    onLaunch={() => {
+                                        const url = model.url || `https://openrouter.ai/models/${model.id?.replace(/^web-/, '') || model.name}`;
+                                        window.open(url, '_blank');
+                                    }}
+                                    onChat={() => setSelectedModel(model)}
                                 />
                             );
                         })}

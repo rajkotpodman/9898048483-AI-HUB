@@ -1,16 +1,18 @@
 'use client'
-import { Star, ExternalLink, Sparkles, Globe, Flame } from 'lucide-react';
+import { Star, ExternalLink, Sparkles, Globe, Flame, MessageSquare } from 'lucide-react';
 
 export default function AICard({ 
   model, 
   isFavorite, 
   onToggleFavorite, 
-  onSelect 
+  onLaunch,
+  onChat
 }: { 
   model: any, 
   isFavorite: boolean, 
   onToggleFavorite: () => void, 
-  onSelect: () => void 
+  onLaunch: () => void,
+  onChat: () => void
 }) {
   const colorClass = model.color || 'bg-blue-500';
   const isWeb = model.isWebDiscovered || model.id?.startsWith('web-');
@@ -23,7 +25,7 @@ export default function AICard({
           ? 'border-cyan-500/30 hover:border-cyan-400/60 bg-gradient-to-b from-slate-900 to-slate-950' 
           : 'border-slate-800 hover:border-slate-700 hover:bg-slate-800/80'
       }`}
-      onClick={onSelect}
+      onClick={onLaunch}
     >
       <div>
         <div className="flex items-center justify-between mb-3">
@@ -78,19 +80,26 @@ export default function AICard({
             type="button"
             onClick={(e) => {
                 e.stopPropagation();
-                const url = model.url || `https://google.com/search?q=${encodeURIComponent(model.name + " AI")}`;
-                window.open(url, '_blank');
+                onChat();
             }}
-            className="inline-flex items-center gap-1 text-slate-400 hover:text-blue-400 font-medium transition-colors px-1.5 py-0.5 rounded hover:bg-slate-800"
-            title="Open in External Tab"
+            className="inline-flex items-center gap-1 text-slate-400 hover:text-emerald-400 font-medium transition-colors px-2 py-1 rounded bg-slate-800 hover:bg-slate-700"
+            title="Chat Inside App"
           >
-             <ExternalLink size={12} />
-             <span className="hidden sm:inline">External Tab</span>
+             <MessageSquare size={13} />
+             <span>Chat</span>
           </button>
-          <span className="inline-flex items-center gap-1 text-blue-400 font-medium group-hover:translate-x-0.5 transition-transform ml-1">
+          <button 
+            type="button"
+            onClick={(e) => {
+                e.stopPropagation();
+                onLaunch();
+            }}
+            className="inline-flex items-center gap-1 text-blue-400 font-medium hover:text-blue-300 transition-colors ml-1"
+            title="Launch in New Tab"
+          >
             <Sparkles size={13} />
             <span>Launch</span>
-          </span>
+          </button>
         </div>
       </div>
     </div>

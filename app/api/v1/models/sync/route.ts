@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { scrapeModels } from '@/lib/services/scraper';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
   try {
     const count = await scrapeModels();
