@@ -60,8 +60,10 @@
   "build": {
     "appId": "com.aihub.app",
     "productName": "9898048483 Android AI",
+    "asar": true,
     "directories": {
-      "output": "dist"
+      "output": "dist",
+      "buildResources": "public"
     },
     "files": [
       "main.js",
@@ -69,7 +71,7 @@
       "package.json"
     ],
     "win": {
-      "target": ["nsis"]
+      "target": "nsis"
     },
     "mac": {
       "target": ["dmg"]
