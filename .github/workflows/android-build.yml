@@ -20,21 +20,21 @@ jobs:
           node-version: 22
           cache: 'npm'
 
-      - name: Setup JDK 17
+      - name: Setup JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '21'
 
       - name: Install Dependencies & Build Web Assets
         run: |
           npm install
           npm run build
 
-      - name: Initialize Capacitor Android Project
+      - name: Initialize & Sync Capacitor Android Project
         run: |
           npx cap add android || true
-          npx cap copy android
+          npx cap sync android
 
       - name: Build Debug APK via Gradle
         working-directory: ./android
