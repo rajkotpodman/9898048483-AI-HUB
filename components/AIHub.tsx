@@ -5,6 +5,7 @@ import AICard from './AICard';
 import InteractionManager from './InteractionManager';
 import CloudBackupModal from './CloudBackupModal';
 import fallbackModels from '@/data/models.json';
+import { scrapeModels } from '@/lib/services/scraper';
 
 export default function AIHub() {
     const [models, setModels] = useState<any[]>(fallbackModels);
@@ -90,16 +91,12 @@ export default function AIHub() {
                 }
             }
 
-            // Fallback to local API or static data if direct fetch fails
-            const url = isAuto ? '/api/v1/models?autoSync=true' : '/api/v1/models';
-            const res = await fetch(url);
-            if (res.ok) {
-                const listData = await res.json();
-                if (Array.isArray(listData) && listData.length > 0) {
-                    setModels(listData);
-                    prevModelsLengthRef.current = listData.length;
-                    setLastSyncTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-                }
+            // Fallback to scrapeModels utility
+            const listData = await scrapeModels(isAuto);
+            if (Array.isArray(listData) && listData.length > 0) {
+                setModels(listData);
+                prevModelsLengthRef.current = listData.length;
+                setLastSyncTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
             }
         } catch (error) {
             console.error('Failed to fetch remote models, using local fallback', error);

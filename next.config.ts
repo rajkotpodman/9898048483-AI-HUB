@@ -2,7 +2,7 @@ import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  output: 'standalone',
+  output: 'export',
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -10,6 +10,7 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: false,
   },
   images: {
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: 'https',
@@ -18,27 +19,6 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
     ],
-  },
-  
-  async rewrites() {
-    return [
-      {
-        source: '/ws/:path*',
-        destination: 'http://localhost:8000/ws/:path*',
-      },
-      {
-        source: '/api/py/:path*',
-        destination: 'http://localhost:8000/:path*',
-      },
-    ]
-  },
-  webpack: (config, {dev}) => {
-    if (dev && process.env.DISABLE_HMR === 'true') {
-      config.watchOptions = {
-        ignored: /.*/,
-      };
-    }
-    return config;
   },
 };
 

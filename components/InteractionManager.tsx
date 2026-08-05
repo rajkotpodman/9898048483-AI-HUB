@@ -4,6 +4,7 @@ import { X, Globe, MessageSquare, Maximize2, Send, Code, Loader2, Bot, Cpu, Term
 import { useSyncEngine } from '../lib/sync/useSyncEngine';
 import dynamic from 'next/dynamic';
 import { useLocalAI } from '../lib/useLocalAI';
+import { GoogleGenAI } from '@google/genai';
 
 const SharedPromptEditor = dynamic(() => import('./SharedPromptEditor'), { ssr: false });
 const WebContainerSandbox = dynamic(() => import('./WebContainerSandbox'), { ssr: false });
@@ -42,34 +43,32 @@ export default function InteractionManager({ model, onClose }: { model: any, onC
     }
 
     try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          modelName: model.name,
-          prompt: newMsg.content,
-          apiKey,
-          debug: debugMode
-        })
+      const keyToUse = apiKey || process.env.NEXT_PUBLIC_GEMINI_API_KEY || '';
+      if (!keyToUse) {
+        throw new Error('Please enter your Gemini API Key in the settings input above to chat with models.');
+      }
+      const ai = new GoogleGenAI({ apiKey: keyToUse });
+      const resp = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: newMsg.content,
       });
-      const data = await res.json();
-      
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to generate response');
+
+      let text = resp.text || 'No response generated.';
+      if (debugMode) {
+        text = `🧠 [Debug / RAG Active]\n🤖 [Model: ${model.name}]\n\n` + text;
       }
 
-      const aiResponse = { role: 'ai' as const, content: data.response || 'No response' };
+      const aiResponse = { role: 'ai' as const, content: text };
       const finalMessages = [...updatedMessages, aiResponse];
       setMessages(finalMessages);
 
       if (isAuthenticated) {
-        // Backup the conversation
         const conversationText = finalMessages.map(m => `${m.role.toUpperCase()}:\n${m.content}\n`).join('\n---\n');
         queueSync('CONVERSATION', `${model.name}_Chat_${Date.now()}.txt`, conversationText, 'GOOGLE_DRIVE');
       }
     } catch (e: any) {
       console.error('Chat error:', e);
-      setMessages([...updatedMessages, { role: 'ai' as const, content: `Error: ${e.message || 'Error communicating with backend.'}` }]);
+      setMessages([...updatedMessages, { role: 'ai' as const, content: `Error: ${e.message || 'Error communicating with AI model.'}` }]);
     } finally {
       setIsGenerating(false);
     }
@@ -80,24 +79,29 @@ export default function InteractionManager({ model, onClose }: { model: any, onC
     setIsGenerating(true);
 
     try {
-      const res = await fetch('/api/code', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          modelName: model.name,
-          prompt,
-          apiKey
-        })
+      const keyToUse = apiKey || process.env.NEXT_PUBLIC_GEMINI_API_KEY || '';
+      if (!keyToUse) {
+        throw new Error('Please enter your Gemini API Key.');
+      }
+      const ai = new GoogleGenAI({ apiKey: keyToUse });
+      const resp = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: `Write clean React/JavaScript code for: ${prompt}. Return only valid code or markdown code block.`,
       });
-      const data = await res.json();
-      setGeneratedCode(data.code || '');
-      setMode('sandbox'); // Switch to sandbox mode automatically
+
+      let codeText = resp.text || '';
+      const match = codeText.match(/```(?:tsx|ts|js|jsx)?([\s\S]*?)```/);
+      if (match && match[1]) {
+        codeText = match[1].trim();
+      }
+
+      setGeneratedCode(codeText);
+      setMode('sandbox');
 
       if (isAuthenticated) {
-        // Backup generated code
-        queueSync('CODE', `${model.name}_Script_${Date.now()}.js`, data.code || '', 'GOOGLE_DRIVE');
+        queueSync('CODE', `${model.name}_Script_${Date.now()}.js`, codeText, 'GOOGLE_DRIVE');
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error('Code generation error:', e);
     } finally {
       setIsGenerating(false);

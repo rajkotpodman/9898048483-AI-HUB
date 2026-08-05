@@ -11,24 +11,24 @@ provider.addScope('https://www.googleapis.com/auth/drive.file');
 let isSigningIn = false;
 let cachedAccessToken: string | null = null;
 
-// Helper to interact with our secure HttpOnly cookie API
+// Helper to interact with local storage in static export mode
 const tokenStorage = {
   save: async (token: string) => {
-    await fetch('/api/auth/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ accessToken: token }),
-    });
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('auth_access_token', token);
+    }
     cachedAccessToken = token;
   },
   load: async () => {
-    const res = await fetch('/api/auth/token');
-    const data = await res.json();
-    cachedAccessToken = data.token;
+    if (typeof window !== 'undefined') {
+      cachedAccessToken = localStorage.getItem('auth_access_token');
+    }
     return cachedAccessToken;
   },
   clear: async () => {
-    await fetch('/api/auth/token', { method: 'DELETE' });
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('auth_access_token');
+    }
     cachedAccessToken = null;
   }
 };
@@ -43,7 +43,6 @@ export const initAuth = (
       if (token) {
         if (onAuthSuccess) onAuthSuccess(user, token);
       } else if (!isSigningIn) {
-        // If we have a user but no token in memory/cookie, we need them to re-authenticate to get a fresh OAuth token
         if (onAuthFailure) onAuthFailure();
       }
     } else {
