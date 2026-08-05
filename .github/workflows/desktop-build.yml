@@ -8,59 +8,34 @@ on:
 
 jobs:
   build-desktop:
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: windows-latest
     env:
       CI: false
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 20
           cache: 'npm'
 
-      - name: Install Linux GUI Dependencies
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libarchive-tools icnsutils graphicsmagick xvfb
-
       - name: Install Dependencies
-        run: npm install
+        run: npm ci || npm install
 
       - name: Build Next.js Static Export
         run: npm run build
 
-      - name: Build Windows App (.exe)
-        if: runner.os == 'Windows'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npm run dist:win
+      - name: Build Windows Installer & Portable (.exe)
+        run: npx electron-builder --win nsis portable
 
-      - name: Build macOS App (.dmg)
-        if: runner.os == 'macOS'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npm run dist:mac
-
-      - name: Build Linux App (.AppImage)
-        if: runner.os == 'Linux'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npm run dist:linux
-
-      - name: Upload Artifacts
+      - name: Upload Windows Executable Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: desktop-app-${{ runner.os }}
+          name: windows-executable-artifacts
           path: |
             dist/*.exe
-            dist/*.dmg
-            dist/*.AppImage
             dist/*.zip
