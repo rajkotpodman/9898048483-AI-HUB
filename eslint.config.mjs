@@ -1,11 +1,11 @@
-import { defineConfig } from "eslint/config";
-import next from "eslint-config-next";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { dirname } from "path";
+import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __dirname = dirname(__filename);
 
-export default defineConfig([{
-    extends: [...next],
-}]);
+export default [
+    {
+        ignores: [".next/**", "dist/**", "python_server_app/**", "node_modules/**"]
+    }
+];
